@@ -15,7 +15,7 @@ public interface ProductRepository extends R2dbcRepository<Product, UUID> {
     Flux<Product> findAllByNameContainingOrCategoryContainingOrPriceOrUpdatedAt(
             String name,
             String category,
-            BigDecimal price,
+            Float price,
             LocalDateTime updatedAt,
             Pageable pageable
     );}
