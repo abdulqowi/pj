@@ -9,9 +9,8 @@ import lombok.ToString;
 @Setter
 @ToString
 @RequiredArgsConstructor
-public class GenericResponse<T> {
-    private String status;
-    private String code;
+public class ErrorResponse {
+    private int status;
+    private String error;
     private String message;
-    private T data;
 }
