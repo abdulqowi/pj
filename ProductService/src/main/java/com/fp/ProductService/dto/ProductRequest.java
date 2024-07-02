@@ -16,13 +16,13 @@ import lombok.experimental.Accessors;
 public class ProductRequest {
     @NotBlank(message = "Name is required")
     private String name;
-    @Min(0)
+    @Min(value = 1,message = "Price is required")
     private Float price;
     @NotBlank(message = "Category is required")
     private String category;
     private String description;
     @NotBlank(message = "Image is required")
-    private String imageUrl;
+    private String imgUrl;
     @Min(0)
     private Integer stockQuantity;
 }
