@@ -7,9 +7,6 @@ import com.fp.ProductService.repository.ProductRepository;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -24,19 +21,21 @@ public class ProductService {
     public ProductService(ProductRepository productRepository) {
         this.productRepository = productRepository;
     }
-
-    public Flux<Product> findProducts(String name, String category, Float price, LocalDateTime updatedAt, String sortBy, int page, int size) {
-        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Order.asc(sortBy)));
-        return productRepository.findAllByNameContainingOrCategoryContainingOrPriceOrUpdatedAt(name, category, price, updatedAt, pageable);
+    public Flux<Product> findProducts(String name, String category, int page, int size) {
+        int offset = page * size;
+        return productRepository.findAllByNameOrCategory(name, category, size, offset);
     }
+
     public Mono<Product>findById(UUID id){
         return productRepository.findById(id);
     }
 
-    public Mono<Product> save(ProductRequest request){
-        var product = mapper.map(request, Product.class);
+    public Mono<Product> save(ProductRequest request) {
+        Product product = mapper.map(request, Product.class);
+        product.setCreatedAt(LocalDateTime.now());
         return productRepository.save(product);
     }
+
 
     public Mono<Product> update(UUID id, ProductRequest request) {
         return productRepository.findById(id)

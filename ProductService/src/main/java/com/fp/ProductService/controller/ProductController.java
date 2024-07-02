@@ -5,11 +5,12 @@ import com.fp.ProductService.dto.Product;
 import com.fp.ProductService.dto.ProductRequest;
 import com.fp.ProductService.service.ProductService;
 import com.fp.ProductService.util.AppConstant;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-import java.time.LocalDateTime;
+
 import java.util.UUID;
 
 @RestController
@@ -23,60 +24,83 @@ public class ProductController {
 
     @GetMapping
     @ResponseStatus(HttpStatus.OK)
-    public GenericResponse<Flux<Product>> getProducts(
+    public Flux<GenericResponse<Product>> getProducts(
             @RequestParam(required = false) String name,
             @RequestParam(required = false) String category,
-            @RequestParam(required = false) Float price,
-            @RequestParam(required = false) LocalDateTime updatedAt,
-            @RequestParam(defaultValue = AppConstant.DEFAULT_SORT_BY) String sortBy,
             @RequestParam(defaultValue = AppConstant.DEFAULT_PAGE) int page,
             @RequestParam(defaultValue = AppConstant.DEFAULT_SIZE) int size
     ) {
-        Flux<Product> products = productService.findProducts(name, category, price, updatedAt, sortBy, page, size);
-
-        GenericResponse<Flux<Product>> response = new GenericResponse<>();
-        response.setStatus(AppConstant.STATUS_SUCCESS);
-        response.setCode(AppConstant.CODE_OK);
-        response.setMessage(AppConstant.MESSAGE_PRODUCTS_RETRIEVED);
-        response.setData(products);
-
-        return response;
+        return productService.findProducts(name, category, page, size)
+                .map(product -> {
+                    GenericResponse<Product> response = new GenericResponse<>();
+                    response.setStatus(AppConstant.STATUS_SUCCESS);
+                    response.setCode(AppConstant.CODE_OK);
+                    response.setMessage(AppConstant.MESSAGE_PRODUCTS_RETRIEVED);
+                    response.setData(product);
+                    return response;
+                });
     }
 
+    @PutMapping("/{id}")
+    @ResponseStatus(HttpStatus.OK)
+    public Mono<GenericResponse<Product>> updateProduct(@PathVariable UUID id, @RequestBody ProductRequest request) {
+        return productService.update(id, request)
+                .flatMap(updatedProduct -> {
+                    GenericResponse<Product> response = new GenericResponse<>();
+                    response.setStatus(AppConstant.STATUS_SUCCESS);
+                    response.setCode(AppConstant.CODE_OK);
+                    response.setMessage(AppConstant.MESSAGE_PRODUCT_UPDATED);
+                    response.setData(updatedProduct);
+                    return Mono.just(response);
+                })
+                .switchIfEmpty(Mono.defer(() -> {
+                    GenericResponse<Product> response = new GenericResponse<>();
+                    response.setStatus(AppConstant.STATUS_ERROR);
+                    response.setCode(AppConstant.STATUS_NOT_FOUND);
+                    response.setMessage(AppConstant.MESSAGE_PRODUCT_NOT_FOUND);
+                    return Mono.just(response);
+                }));
+    }
     @PostMapping("/add")
     @ResponseStatus(HttpStatus.CREATED)
-    public GenericResponse<Mono<Product>> addProduct(@RequestBody ProductRequest request) {
-        var products = productService.save(request);
-        return createProductResponse(products, AppConstant.CODE_CREATED, AppConstant.MESSAGE_PRODUCT_CREATED);
+    public Mono<GenericResponse<Product>> addProduct(@Valid @RequestBody ProductRequest request) {
+        return productService.save(request)
+                .flatMap(product -> {
+                    GenericResponse<Product> response = new GenericResponse<>();
+                    response.setStatus(AppConstant.STATUS_SUCCESS);
+                    response.setCode(AppConstant.CODE_CREATED);
+                    response.setMessage(AppConstant.MESSAGE_PRODUCT_CREATED);
+                    response.setData(product);
+                    return Mono.just(response);
+                });
     }
-
     @GetMapping("/{uuid}")
     @ResponseStatus(HttpStatus.OK)
-    public GenericResponse<Mono<Product>> getProductId(@PathVariable UUID uuid) {
-        var products = productService.findById(uuid);
-        return createProductResponse(products, AppConstant.CODE_OK, AppConstant.MESSAGE_PRODUCTS_RETRIEVED);
+    public Mono<GenericResponse<Product>> getProductId(@PathVariable UUID uuid) {
+        return productService.findById(uuid)
+                .flatMap(product -> {
+                    GenericResponse<Product> response = new GenericResponse<>();
+                    response.setStatus(AppConstant.STATUS_SUCCESS);
+                    response.setCode(AppConstant.CODE_OK);
+                    response.setMessage(AppConstant.MESSAGE_PRODUCTS_RETRIEVED);
+                    response.setData(product);
+                    return Mono.just(response);
+                });
     }
 
     @DeleteMapping("/{uuid}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public GenericResponse<Mono<Void>> deleteProduct(@PathVariable("uuid") UUID uuid) {
-        var products = productService.delete(uuid);
-        GenericResponse<Mono<Void>> response = new GenericResponse<>();
-        response.setStatus(AppConstant.STATUS_SUCCESS);
-        response.setCode(AppConstant.CODE_NO_CONTENT);
-        response.setMessage(AppConstant.MESSAGE_PRODUCT_DELETED);
-        response.setData(products);
-        return response;
+    public Mono<GenericResponse<Void>> deleteProduct(@PathVariable("uuid") UUID uuid) {
+        return productService.delete(uuid)
+                .flatMap(voidMono -> {
+                    GenericResponse<Void> response = new GenericResponse<>();
+                    response.setStatus(AppConstant.STATUS_SUCCESS);
+                    response.setCode(AppConstant.CODE_NO_CONTENT);
+                    response.setMessage(AppConstant.MESSAGE_PRODUCT_DELETED);
+                    response.setData(voidMono);
+                    return Mono.just(response);
+                });
     }
 
     ///////////////////////////////////////// static method///////////////////////////
-    private static GenericResponse<Mono<Product>> createProductResponse(Mono<Product> products, String code, String message) {
-        GenericResponse<Mono<Product>> response = new GenericResponse<>();
-        response.setStatus(AppConstant.STATUS_SUCCESS);
-        response.setCode(code);
-        response.setMessage(message);
-        response.setData(products);
-
-        return response;
-    }
 }

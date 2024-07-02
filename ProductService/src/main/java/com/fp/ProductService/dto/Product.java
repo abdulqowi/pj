@@ -1,5 +1,7 @@
 package com.fp.ProductService.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import jakarta.annotation.Nullable;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
@@ -23,9 +25,11 @@ public class Product {
     private Float price;
     private String category;
     private String description;
-    private String imageUrl;
+    private String imgUrl;
     private Integer stockQuantity;
     @CreatedDate
+    @JsonIgnore
     private LocalDateTime createdAt;
+    @JsonIgnore
     private LocalDateTime updatedAt;
 }

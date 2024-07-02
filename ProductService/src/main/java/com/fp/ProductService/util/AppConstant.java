@@ -23,6 +23,8 @@ public class AppConstant {
     public static final String DEFAULT_SIZE = "10";
 
     // Error Messages
+    public static final String MESSAGE_PRODUCT_UPDATED = "Product updated successfully";
+    public static final String MESSAGE_PRODUCT_NOT_FOUND = "Product not found";
     public static final String ERROR_VALIDATION = "Validation Error";
     public static final String ERROR_ALREADY_EXISTS = "Already exists";
     public static final String ERROR_NOT_FOUND = "Not Found";
