@@ -21,4 +21,5 @@ public class OrderItem {
     private Integer quantity;
     private Long orderId;
     private UUID productId;
+    private String status;
 }

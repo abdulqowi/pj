@@ -20,8 +20,10 @@ public class OrderItemController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public Mono<OrderItem> createOrderItem(@RequestBody OrderItem orderItem) {
-        return orderItemService.createOrderItem(orderItem);
+    public Mono<OrderItem> createOrderItem(@RequestBody Mono<OrderItem> orderItemMono) throws InterruptedException {
+        return orderItemMono
+                .flatMap(orderItem -> orderItemService.confirmedItem(orderItem))
+                .flatMap(confirmedItem -> orderItemService.getOrderItemById(confirmedItem.getId()));
     }
 
     @GetMapping

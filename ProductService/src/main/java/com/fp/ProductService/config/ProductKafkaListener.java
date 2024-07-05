@@ -33,28 +33,33 @@ public class ProductKafkaListener {
     public void listenProduct(String jsonMessage) {
         try {
             Map<String, String> messageMap = objectMapper.readValue(jsonMessage, Map.class);
-            String uuidString = messageMap.get("uuid");
-
-            if (uuidString != null && !uuidString.isEmpty()) {
+            Map<String, Integer> intergermap = objectMapper.readValue(jsonMessage, Map.class);
+            Map<String, Integer> longMap = objectMapper.readValue(jsonMessage, Map.class);
+            ProductDto dto = new ProductDto();
+            dto.setOrderId(messageMap.get("orderId"));
+            dto.setItemId(Long.valueOf(longMap.get("itemId")));
+            dto.setUuid(messageMap.get("uuid"));
+            dto.setQuantity(intergermap.get("quantity"));
+            dto.setStatus(messageMap.get("status"));
+            if (dto.getUuid() != null && !dto.getUuid().isEmpty()) {
                 log.info("Receiving message Product-listen-event From Product Kafka Listener: {}", jsonMessage);
 
-                productService.findById(UUID.fromString(uuidString))
+                productService.findById(UUID.fromString(dto.getUuid()))
                         .subscribe(
                                 product -> {
-                                    ProductDto dto = new ProductDto();
-                                    dto.setUuid(uuidString);
                                     if (product.getUuid() == null) {
                                         dto.setStatus("Not Found");
                                     } else {
-                                        if (product.getStockQuantity() <= 0) {
+                                        if (product.getStockQuantity()+dto.getQuantity() >dto.getQuantity()) {
                                             dto.setStatus("Not available");
                                         }
+                                        dto.setPrice(product.getPrice());
                                         dto.setStatus("Success");
                                     }
                                     kafkaTemplate.send("Product-listen-event", dto);
-                                    log.info("Send event from product Kafka : {}", dto);
+                                    log.info("Send event from product listener : {}", dto);
                                 },
-                                error -> log.error("Error finding product: {}", uuidString, error)
+                                error -> log.error("Error finding product: {}",dto, error)
                         );
             } else {
                 log.error("Invalid Kafka message: Missing fields in {}", jsonMessage);
@@ -77,11 +82,11 @@ public class ProductKafkaListener {
                 UUID uuid = UUID.fromString(uuidString);
 
                 // Deduct stock and subscribe to the result
-                productService.deduct(uuid)
-                        .subscribe(
-                                updatedProduct -> log.info("Stock deducted successfully for product: {}", updatedProduct.getName()),
-                                error -> log.error("Error deducting stock for product with UUID: {}", uuid, error)
-                        );
+//                productService.deduct(uuid)
+//                        .subscribe(
+//                                updatedProduct -> log.info("Stock deducted successfully for product: {}", updatedProduct.getName()),
+//                                error -> log.error("Error deducting stock for product with UUID: {}", uuid, error)
+//                        );
             } else {
                 log.error("UUID field is missing in Kafka message: {}", jsonMessage);
             }

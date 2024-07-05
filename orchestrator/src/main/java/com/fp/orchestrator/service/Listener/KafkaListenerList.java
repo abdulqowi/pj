@@ -1,6 +1,8 @@
 package com.fp.orchestrator.service.Listener;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.pja.common.dto.ProductDto;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -14,18 +16,33 @@ import java.util.Map;
 public class KafkaListenerList {
     private final ObjectMapper objectMapper;
     private final KafkaTemplate<String, String> kafkaTemplate;
+    private final KafkaTemplate<String, ProductDto> productDtoKafkaTemplate;
 
-    public KafkaListenerList(ObjectMapper objectMapper, KafkaTemplate<String, String> kafkaTemplate) {
+
+    public KafkaListenerList(ObjectMapper objectMapper, KafkaTemplate<String, String> kafkaTemplate, KafkaTemplate<String, ProductDto> productDtoKafkaTemplate) {
         this.objectMapper = objectMapper;
         this.kafkaTemplate = kafkaTemplate;
+        this.productDtoKafkaTemplate = productDtoKafkaTemplate;
     }
     @KafkaListener(topics = "Product-listen-event", groupId = "group_id")
-    public void listenProduct(String jsonMessage) {
+    public void listenProduct(String jsonMessage) throws JsonProcessingException {
         log.info("Received message from Product-listen-event Orchestrator : {}", jsonMessage);
+        Map<String, String> messageMap = objectMapper.readValue(jsonMessage, Map.class);
+        Map<String, Integer> intergermap = objectMapper.readValue(jsonMessage, Map.class);
+        Map<String, Integer> longMap = objectMapper.readValue(jsonMessage, Map.class);
+        Map<String, Double> duoMap = objectMapper.readValue(jsonMessage, Map.class);
+        ProductDto dto = new ProductDto();
+        dto.setOrderId(messageMap.get("orderId"));
+        dto.setPrice(Float.valueOf(String.valueOf(duoMap.get("price"))));
+        dto.setItemId(Long.valueOf(longMap.get("itemId")));
+        dto.setUuid(messageMap.get("uuid"));
+        dto.setQuantity(intergermap.get("quantity"));
+        dto.setStatus(messageMap.get("status"));
         try {
             if (jsonMessage!=null&&!jsonMessage.isEmpty()) {
-                log.info("Forwarding message to Product-listen-event Kafka topic: {}", jsonMessage);
-                kafkaTemplate.send("Product-listen-event", jsonMessage);
+                log.info("Forwarding message to Order-listen-event Kafka topic: {}", jsonMessage);
+
+                productDtoKafkaTemplate.send("Order-listen-event", dto);
             } else {
                 log.error("Invalid Kafka message: Missing fields in {}", jsonMessage);
             }

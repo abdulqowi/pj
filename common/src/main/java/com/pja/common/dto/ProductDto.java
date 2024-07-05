@@ -12,6 +12,9 @@ import lombok.experimental.Accessors;
 @RequiredArgsConstructor
 @Accessors(chain = true)
 public class ProductDto {
+    private String orderId;
+    private Long itemId;
+    private Float price;
     private String uuid;
     private Integer quantity;
     private String status;
