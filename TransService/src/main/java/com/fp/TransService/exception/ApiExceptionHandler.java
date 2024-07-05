@@ -1,7 +1,7 @@
 package com.fp.TransService.exception;
 
-import com.fp.ProductService.dto.ErrorResponse;
-import com.fp.ProductService.util.AppConstant;
+import com.fp.TransService.dto.ErrorResponse;
+import com.fp.TransService.util.AppConstant;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

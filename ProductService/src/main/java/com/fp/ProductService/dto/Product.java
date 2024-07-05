@@ -20,7 +20,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class Product {
     @Id
-    private UUID id;
+    private UUID uuid;
     private String name;
     private Float price;
     private String category;

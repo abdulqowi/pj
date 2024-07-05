@@ -1,14 +1,10 @@
 package com.fp.OrderService.dto;
 
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.Data;
+import lombok.experimental.Accessors;
 
-@Getter
-@Setter
-@ToString
-@RequiredArgsConstructor
+@Data
+@Accessors(chain = true)
 public class GenericResponse<T> {
     private String status;
     private String code;

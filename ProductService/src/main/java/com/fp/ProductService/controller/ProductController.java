@@ -2,9 +2,9 @@ package com.fp.ProductService.controller;
 
 import com.fp.ProductService.dto.GenericResponse;
 import com.fp.ProductService.dto.Product;
-import com.fp.ProductService.dto.ProductRequest;
 import com.fp.ProductService.service.ProductService;
 import com.fp.ProductService.util.AppConstant;
+import com.pja.common.dto.ProductRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;

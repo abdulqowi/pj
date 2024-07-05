@@ -2,6 +2,7 @@ package com.fp.OrderService.controller;
 // Create
 import com.fp.OrderService.dto.OrderItem;
 import com.fp.OrderService.service.OrderItemService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -10,20 +11,19 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 @RestController
-@RequestMapping("/api/orderitems")
+@RequestMapping("/orderitems")
+@Slf4j
 public class OrderItemController {
 
     @Autowired
     private OrderItemService orderItemService;
 
-    // Create
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public Mono<OrderItem> createOrderItem(@RequestBody OrderItem orderItem) {
         return orderItemService.createOrderItem(orderItem);
     }
 
-    // Read all
     @GetMapping
     public Flux<OrderItem> getAllOrderItems() {
         return orderItemService.getAllOrderItems();
@@ -33,7 +33,7 @@ public class OrderItemController {
     @GetMapping("/{id}")
     public Mono<ResponseEntity<OrderItem>> getOrderItemById(@PathVariable Long id) {
         return orderItemService.getOrderItemById(id)
-                .map(item -> ResponseEntity.ok(item))
+                .map(ResponseEntity::ok)
                 .defaultIfEmpty(ResponseEntity.notFound().build());
     }
 
@@ -41,7 +41,7 @@ public class OrderItemController {
     @PutMapping("/{id}")
     public Mono<ResponseEntity<OrderItem>> updateOrderItem(@PathVariable Long id, @RequestBody OrderItem orderItem) {
         return orderItemService.updateOrderItem(id, orderItem)
-                .map(updatedItem -> ResponseEntity.ok(updatedItem))
+                .map(ResponseEntity::ok)
                 .defaultIfEmpty(ResponseEntity.notFound().build());
     }
 

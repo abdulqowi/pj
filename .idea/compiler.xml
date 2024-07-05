@@ -7,7 +7,8 @@
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
-        <module name="CartService" />
+        <module name="orchestrator" />
+        <module name="common" />
         <module name="OrderService" />
         <module name="TransService" />
         <module name="ProductService" />
@@ -16,10 +17,11 @@
   </component>
   <component name="JavacSettings">
     <option name="ADDITIONAL_OPTIONS_OVERRIDE">
-      <module name="CartService" options="-parameters" />
       <module name="OrderService" options="-parameters" />
       <module name="ProductService" options="-parameters" />
       <module name="TransService" options="-parameters" />
+      <module name="common" options="-parameters" />
+      <module name="orchestrator" options="-parameters" />
     </option>
   </component>
 </project>

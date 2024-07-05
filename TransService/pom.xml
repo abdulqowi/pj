@@ -74,6 +74,12 @@
 			<version>2.1.0</version>
 		</dependency>
 		<dependency>
+			<groupId>com.pja</groupId>
+			<artifactId>common</artifactId>
+			<version>0.0.1-SNAPSHOT</version>
+			<scope>compile</scope>
+		</dependency>
+		<dependency>
 			<groupId>io.projectreactor</groupId>
 			<artifactId>reactor-test</artifactId>
 			<scope>test</scope>
