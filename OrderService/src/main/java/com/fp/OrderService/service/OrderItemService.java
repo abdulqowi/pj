@@ -86,7 +86,7 @@ public class OrderItemService {
             .delayElement(Duration.ofMillis(500))
             .switchIfEmpty(Mono.defer(() -> {
                 log.error("Order item not found for id: {}", id);
-                return Mono.error(new NoSuchElementException("Order item not found for id: " + id));
+                return Mono.error(new NoSuchElementException("Product Not found"));
             }));
     }
 
