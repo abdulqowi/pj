@@ -50,4 +50,11 @@ public class KafkaTopicConfig {
                 .replicas(1)
                 .build();
     }
+    @Bean
+    public NewTopic OrderSummaryTopic() {
+        return TopicBuilder.name("Order-Summary-event")
+//                .partitions(10)
+                .replicas(1)
+                .build();
+    }
 }

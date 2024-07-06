@@ -1,8 +1,6 @@
 package com.fp.OrderService.controller;
 
-import com.fp.OrderService.dto.GenericResponse;
-import com.fp.OrderService.dto.Order;
-import com.fp.OrderService.dto.OrderRequest;
+import com.fp.OrderService.dto.*;
 import com.fp.OrderService.service.OrderService;
 import com.fp.OrderService.utils.AppConstant;
 import org.springframework.http.HttpStatus;
@@ -34,6 +32,14 @@ public class OrderController {
                     response.setData(order);
                     return Mono.just(response);
                 });
+    }
+    @GetMapping("/{orderId}/details")
+    public Mono<OrderResponse> getOrderDetails(@PathVariable Long orderId) {
+       return orderService.getAllItems(orderId);
+    }
+    @PostMapping("/{orderId}/confirm")
+    public Mono<OrderResponse> confirmOrder(@PathVariable Long orderId) {
+        return orderService.confirmedOrder(orderId);
     }
 
     @PutMapping("/{id}")

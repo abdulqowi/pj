@@ -22,7 +22,7 @@ public class CustomerBalanceService {
     }
 
     public Mono<CustomerBalance> getCustomerBalanceById(Integer id) {
-        return customerBalanceRepository.findById(id);
+        return customerBalanceRepository.findByCustomerId(id);
     }
 
     public Flux<CustomerBalance> getAllCustomerBalances() {

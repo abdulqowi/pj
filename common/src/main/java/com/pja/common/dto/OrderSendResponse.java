@@ -9,9 +9,8 @@ import lombok.ToString;
 @Setter
 @ToString
 @RequiredArgsConstructor
-public class ApiResponse {
+public class OrderSendResponse {
+    private Long orderId;
+    private Float amount;
     private String status;
-    private String code;
-    private String message;
-    private String data;
 }

@@ -15,7 +15,7 @@ import java.time.LocalDateTime;
 public class TransactionDetail {
     @Id
     private Integer id;
-    private Integer orderId;
+    private Long orderId;
     private Float amount;
     private String mode;
     private String status;

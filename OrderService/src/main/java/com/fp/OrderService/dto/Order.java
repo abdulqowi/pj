@@ -15,11 +15,11 @@ import java.time.LocalDateTime;
 public class Order {
     @Id
     private Long id;
-    private String billingAddress;
     private Integer customerId;
+    private String billingAddress;
     private LocalDateTime orderDate;
     private String paymentMethod;
     private String orderStatus;
     private String shippingAddress;
-    private Double totalAmount;
+    private Float totalAmount;
 }

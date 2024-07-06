@@ -5,14 +5,10 @@ import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 
-import java.time.LocalDateTime;
 @Getter
 @Setter
-@ToString
 @RequiredArgsConstructor
-public class OrderRequest {
+@ToString
+public class GetCustomerId {
     private Integer customerId;
-    private String billingAddress;
-    private String paymentMethod;
-    private String shippingAddress;
 }

@@ -18,11 +18,11 @@ public class OrderItemController {
     @Autowired
     private OrderItemService orderItemService;
 
-    @PostMapping
+    @PostMapping("/{orderId}")
     @ResponseStatus(HttpStatus.CREATED)
-    public Mono<OrderItem> createOrderItem(@RequestBody Mono<OrderItem> orderItemMono) throws InterruptedException {
+    public Mono<OrderItem> createOrderItem(@PathVariable Integer orderId,@RequestBody Mono<OrderItem> orderItemMono) throws InterruptedException {
         return orderItemMono
-                .flatMap(orderItem -> orderItemService.confirmedItem(orderItem))
+                .flatMap(orderItem -> orderItemService.confirmedItem(orderItem, Long.valueOf(orderId)))
                 .flatMap(confirmedItem -> orderItemService.getOrderItemById(confirmedItem.getId()));
     }
 

@@ -5,6 +5,7 @@ import com.fp.TransService.service.TransactionDetailService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -26,10 +27,8 @@ public class TransactionDetailController {
     }
 
     @GetMapping("/{id}")
-    public Mono<ResponseEntity<TransactionDetail>> getTransactionDetailById(@PathVariable Integer id) {
-        return transactionDetailService.getTransactionDetailById(id)
-                .map(ResponseEntity::ok)
-                .defaultIfEmpty(ResponseEntity.notFound().build());
+    public Mono<TransactionDetail> getTransactionDetailById(@PathVariable Integer id) {
+        return transactionDetailService.getTransactionDetailById(Long.valueOf(id));
     }
 
     @GetMapping
