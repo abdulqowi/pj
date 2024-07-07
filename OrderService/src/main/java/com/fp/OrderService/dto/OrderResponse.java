@@ -1,13 +1,18 @@
 package com.fp.OrderService.dto;
 
-import lombok.Data;
+import lombok.*;
 import lombok.experimental.Accessors;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-@Data
+import java.util.List;
+
+@Getter
+@Setter
+@ToString
+@RequiredArgsConstructor
 @Accessors(chain = true)
 public class OrderResponse {
     private Order order;
-    private Flux<OrderItem> items;
+    private List<OrderItem> items;
 }

@@ -1,15 +1,20 @@
 package com.fp.ProductService.config;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fp.ProductService.service.ProductService;
+import com.pja.common.dto.ItemDto;
 import com.pja.common.dto.ProductDto;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Component;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.io.IOException;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -37,7 +42,7 @@ public class ProductKafkaListener {
             productService.findById(UUID.fromString(dto.getUuid()))
                     .doOnNext(product -> log.info("Product found: {}", product))
                     .flatMap(product -> {
-                        if (product.getStockQuantity()> dto.getQuantity()){
+                        if (product.getStockQuantity()>= dto.getQuantity()){
                             dto.setPrice(product.getPrice());
                             dto.setStatus("Success");
                             log.info("DTO after processing: {}", dto);
@@ -63,30 +68,20 @@ public class ProductKafkaListener {
         }
     }
 
-    @KafkaListener(topics = "Product-deduct-event", groupId = "group_id")
-    public void listen(String jsonMessage) {
+    @KafkaListener(topics = "Product-deduct-event", groupId = "group_id",containerFactory = "fooListener")
+    public void listen(List<ItemDto> jsonMessage) {
         log.info("Received message from Orchestrator: {}", jsonMessage);
-
         try {
-            Map<String,String> messageMap = objectMapper.readValue(jsonMessage, Map.class);
+            Flux.fromIterable(jsonMessage)
+                    .flatMap(item -> {
+                        UUID uuid = UUID.fromString(item.getProductId());
 
-            // Get the UUID string from the message map
-            String uuidString = messageMap.get("uuid");
-
-            if (uuidString != null) {
-                UUID uuid = UUID.fromString(uuidString);
-
-                // Deduct stock and subscribe to the result
-//                productService.deduct(uuid)
-//                        .subscribe(
-//                                updatedProduct -> log.info("Stock deducted successfully for product: {}", updatedProduct.getName()),
-//                                error -> log.error("Error deducting stock for product with UUID: {}", uuid, error)
-//                        );
-            } else {
-                log.error("UUID field is missing in Kafka message: {}", jsonMessage);
-            }
-        } catch (IOException e) {
-            log.error("Error parsing Kafka message: {}", jsonMessage, e);
+                        return productService.deduct(uuid, item.getQuantity())
+                                .doOnSuccess(updatedProduct -> log.info("Stock deducted successfully for product: {}, quantity: {}", updatedProduct.getName(),item.getProductId()))
+                                .doOnError(error -> log.error("Error deducting stock for product with UUID: {}, quantity: {}", uuid, item.getQuantity(), error))
+                                .onErrorResume(error -> Mono.empty());
+                    })
+                    .subscribe();
         } catch (IllegalArgumentException e) {
             log.error("Invalid UUID format in Kafka message: {}", jsonMessage, e);
         }

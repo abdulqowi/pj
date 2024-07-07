@@ -20,6 +20,16 @@ public class CustomerBalanceService {
     public Mono<CustomerBalance> saveCustomerBalance(CustomerBalance customerBalance) {
         return customerBalanceRepository.save(customerBalance);
     }
+    public Mono<CustomerBalance> deductAmount(Integer customerId, Float amount) {
+        return getCustomerBalanceById(customerId)
+                .flatMap(customerBalance -> {
+                    if (customerBalance.getAmount() < amount) {
+                        return Mono.error(new RuntimeException("Insufficient balance"));
+                    }
+                    customerBalance.setAmount(customerBalance.getAmount() - amount);
+                    return saveCustomerBalance(customerBalance);
+                });
+    }
 
     public Mono<CustomerBalance> getCustomerBalanceById(Integer id) {
         return customerBalanceRepository.findByCustomerId(id);

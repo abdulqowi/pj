@@ -16,8 +16,6 @@ public class WebClientConfig {
     public WebClient genericWebClient() {
         return WebClient.builder()
                 .baseUrl(getBaseUrl)
-                .defaultHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE,
-                        HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE
-                ).build();
+                .build();
     }
 }

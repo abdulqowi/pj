@@ -29,20 +29,20 @@ public class ProductService {
         this.kafkaTemplate = kafkaTemplate;
     }
 
-//    public Mono<Product> deduct(UUID id) {
-//        return findById(id)
-//                .switchIfEmpty(Mono.error(new NoSuchElementException("Product not found")))
-//                .flatMap(product -> {
-//                    if (product.getStockQuantity() == 0) {
-//                        log.error("Product out of stock");
-//                        return Mono.empty();
-//                    }
-//                    product.setStockQuantity(product.getStockQuantity() - 1);
-//                    return productRepository.save(product)
-//                            .doOnNext(updatedProduct -> kafkaTemplate.send("Product-deduct-event", updatedProduct));
-//                })
-//                .doOnError(ex -> log.error("Error deducting product stock", ex));
-//    }
+    public Mono<Product> deduct(UUID id,Integer quantity) {
+        log.info("GET PRODUCT :{}",id);
+        return findById(id)
+                .switchIfEmpty(Mono.error(new NoSuchElementException("Product not found")))
+                .flatMap(product -> {
+                    if (product.getStockQuantity() == 0) {
+                        log.error("Product out of stock");
+                        return Mono.empty();
+                    }
+                    product.setStockQuantity(product.getStockQuantity() - quantity);
+                    return productRepository.save(product);
+                })
+                .doOnError(ex -> log.error("Error deducting product stock", ex));
+    }
 
     public Flux<Product> findProducts(String name, String category, int page, int size) {
         int offset = page * size;
@@ -51,6 +51,10 @@ public class ProductService {
 
     public Mono<Product>findById(UUID id){
         return productRepository.findById(id);
+    }
+
+    public Flux<Product> findAllById(UUID id) {
+        return productRepository.findAllById(Mono.just(id));
     }
 
     public Mono<Product> save(ProductRequest request) {

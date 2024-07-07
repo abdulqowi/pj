@@ -1,6 +1,8 @@
 package com.fp.ProductService.config;
 
-import com.fp.ProductService.dto.Product;
+import com.fasterxml.jackson.databind.JavaType;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.pja.common.dto.ItemDto;
 import com.pja.common.dto.ProductDto;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
@@ -31,6 +33,20 @@ public class KafkaConfig {
         return new DefaultKafkaProducerFactory<>(configProps);
     }
 
+    @Bean
+    public ConsumerFactory<String, List<ItemDto>> consumerFactory(){
+        Map<String,Object> config = new HashMap<>();
+        config.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG,"localhost:9092");
+        ObjectMapper om = new ObjectMapper();
+        JavaType type = om.getTypeFactory().constructParametricType(List.class, ItemDto.class);
+        return new DefaultKafkaConsumerFactory<>(config,new StringDeserializer(), new JsonDeserializer<List<ItemDto>>(type, om, false));
+    }
+    @Bean
+    public ConcurrentKafkaListenerContainerFactory<String, List<ItemDto>> fooListener(){
+        ConcurrentKafkaListenerContainerFactory<String, List<ItemDto>> factory = new ConcurrentKafkaListenerContainerFactory<>();
+        factory.setConsumerFactory(consumerFactory());
+        return factory;
+    }
     @Bean
     public KafkaTemplate<String, ProductDto> kafkaTemplate() {
         return new KafkaTemplate<>(producerFactory());

@@ -25,6 +25,10 @@ public class TransactionDetailController {
     public Mono<TransactionDetail> createTransaction(@RequestBody TransactionDetail transactionDetail) {
         return transactionDetailService.saveTransactionDetail(transactionDetail);
     }
+    @PostMapping("/payment/{id}")
+    public Mono<TransactionDetail> payment(@PathVariable Integer id, @RequestBody Integer amount){
+        return transactionDetailService.processTransaction(id,amount);
+    }
 
     @GetMapping("/{id}")
     public Mono<TransactionDetail> getTransactionDetailById(@PathVariable Integer id) {

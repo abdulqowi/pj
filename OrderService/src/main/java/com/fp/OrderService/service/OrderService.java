@@ -11,14 +11,20 @@ import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.web.reactive.function.client.ClientResponse;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -35,73 +41,94 @@ public class OrderService {
     //Mengisi Form Order
     public Mono<Order> save(OrderRequest orderRequest) {
         Order order = mapper.map(orderRequest, Order.class);
+        order.setOrderStatus("unconfirmed");
+        ZoneId zoneId = ZoneId.of("Asia/Jakarta");
+        order.setOrderDate(LocalDateTime.now(zoneId));
+        order.setTotalAmount(0f);
         String endpoint = "/balances/{id}";
 
         return setCustomerIdForOrder(order, endpoint)
-                .flatMap(orderRepository::save);
+                .flatMap(orderRepository::save)
+                .doOnSuccess(savedOrder -> log.info("Order saved successfully: {}", savedOrder))
+                .doOnError(e -> log.error("Failed to save order: {}", e.getMessage(), e));
     }
 
     public Mono<Order> setCustomerIdForOrder(Order order, String endpoint) {
         return this.genericWebClient.get()
-                .uri(endpoint,order.getCustomerId())
-                .header(HttpHeaders.ACCEPT,MediaType.APPLICATION_JSON_VALUE)
+                .uri(endpoint, order.getCustomerId())
+                .header(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE)
                 .accept(MediaType.APPLICATION_JSON)
-                .retrieve()
-                .bodyToMono(GetCustomerId.class)
-                .flatMap(customerId -> {
-                    if (customerId != null && customerId.getCustomerId() != null) {
-                        order.setCustomerId(customerId.getCustomerId());
+                .exchangeToMono(response -> {
+                    if (response.statusCode().is2xxSuccessful()) {
+                        log.info("Success :{}",order);
                         return Mono.just(order);
                     } else {
-                        return Mono.empty();
+                        log.error("Error occurred while retrieving customer ID, status code: {}", response.statusCode());
+                        return response.createException().flatMap(Mono::error);
                     }
                 })
                 .doOnError(e -> log.error("Error occurred while retrieving customer ID: {}", e.getMessage(), e));
     }
 
     //Menyelesaikan Order
-    public Mono<OrderResponse>getAllItems(Long id){
-        Mono<Order> order = findById(id);
-        Flux<OrderItem>items = orderItemRepository.findAllByOrderId(id);
-        Mono<Float>totalPrice = orderItemRepository.sumPriceByOrderId(id);
-        return order.flatMap(orders ->
-                totalPrice.flatMap(totalPriceOrder->{
-                    orders.setTotalAmount(totalPriceOrder);
-                    return Mono.just(new OrderResponse()
-                            .setOrder(orders)
-                            .setItems(items));
-                })
-        );
+    public Mono<OrderResponse> getAllItems(Long id) {
+        Mono<Order> orderMono = findById(id);
+        Flux<OrderItem> itemsFlux = orderItemRepository.findAllByOrderId(id);
+        Mono<Float> totalPriceMono = orderItemRepository.sumPriceByOrderId(id);
+
+        return orderMono
+                .zipWith(totalPriceMono)
+                .flatMap(tuple -> {
+                    Order order = tuple.getT1();
+                    Float totalPrice = tuple.getT2();
+                    order.setTotalAmount(totalPrice);
+                    return itemsFlux.collectList()
+                            .map(items -> {
+                                OrderResponse response = new OrderResponse()
+                                        .setOrder(order)
+                                        .setItems(items);
+                                log.info("OrderResponse constructed: {}", response);
+                                return response;
+                            });
+                });
     }
+
     //Konfirmasi Order
     public Mono<OrderResponse> confirmedOrder(Long id) {
         Mono<Order> orderMono = findById(id);
-        Flux<OrderItem> items = orderItemRepository.findAllByOrderId(id);
+        Flux<OrderItem> itemsFlux = orderItemRepository.findAllByOrderId(id);
         Mono<Float> totalPriceMono = orderItemRepository.sumPriceByOrderId(id);
 
-        return orderMono.flatMap(order ->
-                totalPriceMono.flatMap(totalPrice -> {
-                    // Set total price in Order
+        return orderMono
+                .zipWith(totalPriceMono)
+                .flatMap(tuple -> {
+                    Order order = tuple.getT1();
+                    Float totalPrice = tuple.getT2();
                     order.setTotalAmount(totalPrice);
 
-                    // Create OrderResponse
-                    OrderResponse orderResponse = new OrderResponse()
-                            .setOrder(order)
-                            .setItems(items);
+                    return itemsFlux.collectList().flatMap(items -> {
+                        // Create OrderResponse
+                        OrderResponse orderResponse = new OrderResponse()
+                                .setOrder(order)
+                                .setItems(items);
 
-                    // Map Order to OrderSendResponse
-                    OrderSendResponse orderSendResponse = new OrderSendResponse();
-                    orderSendResponse.setOrderId(order.getId());
-                    orderSendResponse.setAmount(totalPrice);
-                    orderSendResponse.setStatus(String.valueOf(OrderStatus.CREATED));
+                        // Map Order to OrderSendResponse
+                        OrderSendResponse orderSendResponse = new OrderSendResponse();
+                        orderSendResponse.setOrderId(order.getId());
+                        orderSendResponse.setCustomerId(order.getCustomerId());
+                        orderSendResponse.setAmount(totalPrice);
+                        orderSendResponse.setStatus(String.valueOf(OrderStatus.CREATED));
 
-                    // Send the OrderSendResponse message to Kafka
-                    transTemplate.send("Order-Summary-Event", orderSendResponse);
-
-                    return Mono.just(orderResponse);
-                })
-        );
+                        // Send the OrderSendResponse message to Kafka
+                        return Mono.fromFuture(transTemplate.send("Order-Summary-Event", orderSendResponse))
+                                .doOnSuccess(result -> log.info("Sent to Kafka: {}", orderSendResponse))
+                                .doOnError(error -> log.error("Failed to send to Kafka: {}", error.getMessage()))
+                                .thenReturn(orderResponse);
+                    });
+                });
     }
+
+
     public Mono<Order> update(Long id, OrderRequest orderRequest) {
         return orderRepository.findById(id)
                 .flatMap(existingOrder -> {
@@ -111,6 +138,16 @@ public class OrderService {
                 .switchIfEmpty(Mono.empty());
     }
 
+    public Mono<Order> updateStatus(Long id) {
+        return orderRepository.findById(id)
+                .flatMap(existingOrder -> {
+                    existingOrder.setOrderStatus(OrderStatus.COMPLETED.toString());
+                    return orderRepository.save(existingOrder);
+                })
+                .doOnSuccess(updatedOrder -> log.info("Order status updated successfully for id: {}", id))
+                .doOnError(error -> log.error("Error updating order status for id: {}", id, error))
+                .switchIfEmpty(Mono.error(new NoSuchElementException("Order not found with id: " + id)));
+    }
     public Mono<Void> delete(Long id) {
         return orderRepository.deleteById(id);
     }

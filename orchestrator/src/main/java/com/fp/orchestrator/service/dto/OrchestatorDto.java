@@ -12,6 +12,5 @@ import lombok.ToString;
 public class OrchestatorDto {
     private String status;
     private String code;
-    private String message;
     private String data;
 }

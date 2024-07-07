@@ -69,18 +69,6 @@ public class OrderItemService {
         return orderItemRepository.findAll();
     }
 
-//    public Flux<OrderItem> getItems(Long id){
-//        return getAllItems(id).flatMap(
-//                orderItem -> {
-//                    String productId = orderItem.getProductId().toString();
-//                    ProductDto dto = new ProductDto();
-//                    dto.setUuid(productId);
-//                    return getAllItems(id)
-//                            .doOnNext(ids->kafkaTemplate.send("Product-event", dto))
-//                            .doOnNext(ids->log.info("Success get items : "+ dto));
-//                }
-//        );
-//    }
     public Mono<OrderItem> getOrderItemById(Long id) {
         return orderItemRepository.findById(id)
             .delayElement(Duration.ofMillis(500))

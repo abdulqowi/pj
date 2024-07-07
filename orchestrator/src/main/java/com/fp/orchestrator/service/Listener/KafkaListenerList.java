@@ -11,22 +11,18 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
-import java.io.IOException;
-import java.util.Map;
 
 @Service
 @Slf4j
 public class KafkaListenerList {
     private final ObjectMapper objectMapper;
     private final KafkaTemplate<String, String> kafkaTemplate;
-    private final KafkaTemplate<String, ProductDto> productDtoKafkaTemplate;
     private final OrchestratorService orchestratorService;
 
 
-    public KafkaListenerList(ObjectMapper objectMapper, KafkaTemplate<String, String> kafkaTemplate, KafkaTemplate<String, ProductDto> productDtoKafkaTemplate, OrchestratorService orchestratorService) {
+    public KafkaListenerList(ObjectMapper objectMapper, KafkaTemplate<String, String> kafkaTemplate, OrchestratorService orchestratorService) {
         this.objectMapper = objectMapper;
         this.kafkaTemplate = kafkaTemplate;
-        this.productDtoKafkaTemplate = productDtoKafkaTemplate;
         this.orchestratorService = orchestratorService;
     }
     @KafkaListener(topics = "Order-Summary-Event", groupId = "group_id")
@@ -34,12 +30,12 @@ public class KafkaListenerList {
         log.info("Received OrderSummary event from Kafka: {}", jsonMessage);
 
         Mono.just(jsonMessage)
-                .map(message -> {
+                .<OrderSendResponse>handle((message, sink) -> {
                     try {
-                        return objectMapper.readValue(message, OrderSendResponse.class);
+                        sink.next(objectMapper.readValue(message, OrderSendResponse.class));
                     } catch (Exception e) {
                         log.error("Error processing OrderSummary event: {}", jsonMessage, e);
-                        throw new RuntimeException("Failed to parse JSON message");
+                        sink.error(new RuntimeException("Failed to parse JSON message"));
                     }
                 })
                 .flatMap(orchestratorService::sendOrder)

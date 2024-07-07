@@ -18,8 +18,8 @@ public class OrderItem {
     @Id
     private Long id;
     private Float price;
-    private Integer quantity;
     private Long orderId;
-    private UUID productId;
     private String status;
+    private UUID productId;
+    private Integer quantity;
 }

@@ -57,4 +57,12 @@ public class KafkaTopicConfig {
                 .replicas(1)
                 .build();
     }
+    @Bean
+    public NewTopic ProcessOrderTopic() {
+        return TopicBuilder.name("Process-order-event")
+//                .partitions(10)
+                .replicas(1)
+                .build();
+    }
+
 }
