@@ -20,6 +20,14 @@ public class CustomerBalanceController {
     public CustomerBalanceController(CustomerBalanceService customerBalanceService) {
         this.customerBalanceService = customerBalanceService;
     }
+    @PutMapping("/{id}")
+    public Mono<ResponseEntity<CustomerBalance>> updateCustomerBalance(
+            @PathVariable Integer id,
+            @RequestBody Float newBalance) {
+        return customerBalanceService.updateCustomerBalance(id, newBalance)
+                .map(ResponseEntity::ok)
+                .defaultIfEmpty(ResponseEntity.notFound().build());
+    }
 
     @PostMapping
     public Mono<CustomerBalance> createCustomerBalance(@RequestBody CustomerBalance customerBalance) {

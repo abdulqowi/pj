@@ -75,7 +75,7 @@ public class OrderKafkaListener {
         }
     }
 
-    private Mono<Void> updateOrderAndSendToKafka(long orderId) {
+    Mono<Void> updateOrderAndSendToKafka(long orderId) {
         return orderService.updateStatus(orderId)
                 .flatMap(order -> getAllOrderItems(orderId)
                         .flatMap(items -> {
@@ -96,7 +96,7 @@ public class OrderKafkaListener {
                 .then();
     }
 
-    private Mono<List<OrderItem>> getAllOrderItems(long orderId) {
+    Mono<List<OrderItem>> getAllOrderItems(long orderId) {
         return orderItemRepository.findAllByOrderId(orderId)
                 .collectList()
                 .doOnNext(items -> {
@@ -107,7 +107,7 @@ public class OrderKafkaListener {
                 });
     }
 
-    private Mono<Void> sendKafkaMessage(List<ItemDto> productInfos) {
+    public Mono<Void> sendKafkaMessage(List<ItemDto> productInfos) {
         return Mono.fromRunnable(() -> {
             try {
                 kafkaTemplate.send("Product-deduct-event", productInfos);

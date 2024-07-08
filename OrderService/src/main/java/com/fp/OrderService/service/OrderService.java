@@ -30,9 +30,7 @@ import java.util.Objects;
 @RequiredArgsConstructor
 @Slf4j
 public class OrderService {
-
-    @Autowired
-    private WebClient genericWebClient;
+    private final WebClient genericWebClient;
     private final OrderRepository orderRepository;
     private final OrderItemRepository orderItemRepository;
     private final ModelMapper mapper = GlobalModelMapper.getModelMapper();

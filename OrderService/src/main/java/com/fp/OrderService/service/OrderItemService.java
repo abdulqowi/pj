@@ -5,6 +5,7 @@ import com.fp.OrderService.dto.OrderItem;
 import com.fp.OrderService.repository.OrderItemRepository;
 import com.fp.OrderService.repository.OrderRepository;
 import com.pja.common.dto.ProductDto;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -16,19 +17,13 @@ import java.time.Duration;
 import java.util.NoSuchElementException;
 
 @Service
+@RequiredArgsConstructor
 @Slf4j
 public class OrderItemService {
-
-    @Autowired
-    private OrderItemRepository orderItemRepository;
-    @Autowired
-    private OrderRepository orderRepository;
+    private final OrderItemRepository orderItemRepository;
+    private final OrderRepository orderRepository;
 
     private final KafkaTemplate<String, ProductDto> kafkaTemplate;
-
-    public OrderItemService(KafkaTemplate<String, ProductDto> kafkaTemplate) {
-        this.kafkaTemplate = kafkaTemplate;
-    }
 
     public Mono<OrderItem> createOrderItem(OrderItem orderItem, Long orderId) {
         orderItem.setStatus("Unconfirmed");

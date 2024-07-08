@@ -1,6 +1,7 @@
 package com.fp.TransService.service;
 import com.fp.TransService.config.GlobalModelMapper;
 import com.fp.TransService.dto.TransactionDetail;
+import com.fp.TransService.dto.TransactionStatus;
 import com.fp.TransService.repository.TransactionRepository;
 import com.pja.common.dto.OrderSendResponse;
 import lombok.extern.slf4j.Slf4j;
@@ -13,6 +14,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 @Service
@@ -37,10 +40,16 @@ public class TransactionDetailService {
                     Integer customerId = transactionDetail.getCustomerId();
                     return customerBalanceService.deductAmount(customerId, Float.valueOf(amount))
                             .then(sendOrder(transactionDetail.getOrderId().intValue(), customerId, amount))
+                            .then(updateTransactionStatus(transactionDetail, TransactionStatus.APPROVED.name()))
                             .then(Mono.just(transactionDetail))
                             .doOnSuccess(detail -> log.info("Transaction processed successfully: {}", detail))
                             .doOnError(error -> log.error("Failed to process transaction: {}", error.getMessage()));
                 });
+    }
+    private Mono<TransactionDetail> updateTransactionStatus(TransactionDetail transactionDetail, String newStatus) {
+        transactionDetail.setStatus(newStatus);
+        transactionDetail.setPaymentDate(LocalDateTime.now());
+        return transactionDetailRepository.save(transactionDetail);
     }
 
     public Mono<OrderSendResponse> sendOrder(Integer orderId, Integer customerId, Integer amount) {
